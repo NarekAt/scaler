@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <set>
 #include <cassandra.h>
 #include <hiredis/hiredis.h>
 #include <grpcpp/grpcpp.h>
@@ -269,6 +270,15 @@ public:
     }
 
 private:
+    // Get minute bucket string from a time_point
+    string get_minute_bucket(chrono::system_clock::time_point tp) {
+        time_t tt = chrono::system_clock::to_time_t(tp);
+        tm utc_tm = *gmtime(&tt);
+        char buffer[20];
+        strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H:%M", &utc_tm);
+        return string(buffer);
+    }
+
     void poll_and_publish() {
         try {
             auto now = chrono::system_clock::now();
@@ -276,24 +286,30 @@ private:
                 now.time_since_epoch()
             ).count();
 
-            // Get the current minute bucket (YYYY-MM-DD-HH:MM)
-            time_t tt = chrono::system_clock::to_time_t(now);
-            tm local_tm = *localtime(&tt);
-            char buffer[20];
-            strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H:%M", &local_tm);
-            string minute_bucket(buffer);
-
-            // TODO: Also check adjacent minute buckets for tasks at boundaries
-            
             int64_t lookahead_ms = lookahead_seconds * 1000LL;
 
-            // Fetch pending jobs from Cassandra
-            auto jobs = cassandra->fetch_pending_jobs(
-                minute_bucket,
-                current_time_ms,
-                lookahead_ms,
-                batch_size
-            );
+            // Collect minute buckets to query: from (now - lookahead) to (now + lookahead)
+            // This covers jobs that should have fired recently and jobs about to fire
+            auto start_time = now - chrono::seconds(lookahead_seconds);
+            auto end_time = now + chrono::seconds(lookahead_seconds);
+
+            set<string> buckets;
+            for (auto t = start_time; t <= end_time; t += chrono::minutes(1)) {
+                buckets.insert(get_minute_bucket(t));
+            }
+            buckets.insert(get_minute_bucket(end_time));
+
+            // Fetch pending jobs from all relevant minute buckets
+            vector<tuple<string, string, int64_t>> jobs;
+            for (const auto& bucket : buckets) {
+                auto batch = cassandra->fetch_pending_jobs(
+                    bucket,
+                    current_time_ms - (lookahead_seconds * 1000LL),
+                    lookahead_ms,
+                    batch_size
+                );
+                jobs.insert(jobs.end(), batch.begin(), batch.end());
+            }
 
             cout << "Fetched " << jobs.size() << " jobs from Cassandra" << endl;
 

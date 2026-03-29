@@ -20,9 +20,9 @@ using scheduler::ScheduleJobResponse;
 std::string get_minute_bucket(int64_t timestamp_ms) {
     auto time_point = std::chrono::system_clock::time_point(std::chrono::milliseconds(timestamp_ms));
     time_t tt = std::chrono::system_clock::to_time_t(time_point);
-    tm local_tm = *localtime(&tt);
+    tm utc_tm = *gmtime(&tt);
     char buffer[20];
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H:%M", &local_tm);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H:%M", &utc_tm);
     return std::string(buffer);
 }
 
