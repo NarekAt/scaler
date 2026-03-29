@@ -1,0 +1,19 @@
+# Build directories
+build/
+
+# Generated protobuf files
+*.pb.h
+*.pb.cc
+
+# IDE
+.vscode/
+.clangd
+
+# Cache
+.cache/
+
+# macOS
+.DS_Store
+
+# Docker dev container
+.devcontainer/

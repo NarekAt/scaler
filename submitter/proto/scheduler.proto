@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package scheduler;
+
+service JobScheduler {
+  // Submit a job to be executed at a specific time
+  rpc ScheduleJob (ScheduleJobRequest) returns (ScheduleJobResponse) {}
+}
+
+message ScheduleJobRequest {
+  string payload = 1;          // The JSON payload or command to execute
+  int64 execute_at_ms = 2;     // Exact execution time in Unix epoch milliseconds
+}
+
+message ScheduleJobResponse {
+  string job_id = 1;           // The Cassandra UUID returned to the client
+  string status = 2;           // e.g., "PENDING"
+}

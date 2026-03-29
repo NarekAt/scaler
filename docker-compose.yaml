@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  cassandra:
+    image: cassandra:latest
+    container_name: local-cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=SchedulerCluster
+    healthcheck:
+      test: ["CMD-SHELL", "[ $$(nodetool statusgossip) = running ]"]
+      interval: 15s
+      timeout: 20s
+      retries: 5
+    networks:
+      - scheduler-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: scheduler-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - scheduler-net
+
+  submitter:
+    build: 
+      context: ./submitter
+    container_name: cpp-submitter
+    ports:
+      - "50051:50051"
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    volumes:
+      - ./submitter:/workspace
+    networks:
+      - scheduler-net
+
+  watcher:
+    build:
+      context: ./watcher
+    container_name: cpp-watcher
+    depends_on:
+      cassandra:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./watcher:/workspace
+    networks:
+      - scheduler-net
+    environment:
+      - CASSANDRA_HOST=cassandra
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - POLL_INTERVAL_SECONDS=5
+      - LOOKAHEAD_SECONDS=30
+
+networks:
+  scheduler-net:
+    driver: bridge

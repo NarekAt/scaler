@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package scheduler;
+
+// Proto definitions for the Watcher service
+// The Watcher polls Cassandra and publishes tasks to Redis
+
+message WatcherConfig {
+  int32 poll_interval_seconds = 1;  // How often to poll Cassandra
+  int32 lookahead_seconds = 2;      // How many seconds ahead to look for tasks
+  int32 batch_size = 3;             // Number of tasks to fetch per poll
+}
+
+message TaskPublished {
+  string job_id = 1;
+  string payload = 2;
+  int64 scheduled_time = 3;
+  string status = 4;
+}

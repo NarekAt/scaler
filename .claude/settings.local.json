@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(brew install:*)",
+      "Read(//opt/homebrew/Cellar/grpc/1.78.1_1/include/grpcpp/**)",
+      "Read(//opt/homebrew/Cellar/protobuf/34.0/include/google/protobuf/**)",
+      "Bash(pkg-config:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(chmod:*)",
+      "Bash(git init:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
