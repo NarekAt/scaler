@@ -17,3 +17,6 @@ build/
 
 # Docker dev container
 .devcontainer/
+
+.venv/
+*.pyc

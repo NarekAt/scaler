@@ -1,12 +1,16 @@
 "use client";
 import { Excalidraw } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 
-export default function Canvas() {
+interface CanvasProps {
+  onApiReady?: (api: ExcalidrawImperativeAPI) => void;
+}
+
+export default function Canvas({ onApiReady }: CanvasProps) {
   return (
-    // The inline minHeight guarantees the DOM allocates 600px immediately
     <div style={{ height: "100%", width: "100%", minHeight: "600px" }}>
-      <Excalidraw theme="light" />
+      <Excalidraw theme="light" excalidrawAPI={onApiReady} />
     </div>
   );
 }
